@@ -1,0 +1,14 @@
+[package]
+name = "sing_me_a_song"
+version = "0.1.0"
+authors = ["silvius_seacoal"]
+
+[dependencies]
+piston = "0.37.0"
+find_folder = "0.3.0"
+piston_window = "0.80.0"
+piston2d-graphics = "0.26.0"
+pistoncore-glutin_window = "0.47.0"
+piston2d-opengl_graphics = "0.53.0"
+piston-ai_behavior = "0.24.0"
+piston2d-sprite = "0.45.0"
