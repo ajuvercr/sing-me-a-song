@@ -3,6 +3,14 @@ extern crate piston_window;
 extern crate ai_behavior;
 extern crate sprite;
 extern crate find_folder;
+extern crate graphics;
+extern crate rand;
+
+mod config;
+use config::Config;
+
+mod sheet;
+use sheet::Measure;
 
 use std::rc::Rc;
 
@@ -17,10 +25,10 @@ use ai_behavior::{
 };
 
 fn main() {
-    let (width, height) = (300, 300);
+    let config = Config::default();
     let opengl = OpenGL::V3_2;
     let mut window: PistonWindow =
-        WindowSettings::new("piston: sprite", (width, height))
+        WindowSettings::new("piston: sprite", (config.width, config.height))
         .exit_on_esc(true)
         .opengl(opengl)
         .samples(16)
@@ -38,7 +46,7 @@ fn main() {
             &TextureSettings::new()
         ).unwrap());
     let mut sprite = Sprite::from_texture(tex.clone());
-    sprite.set_position(width as f64 / 2.0, height as f64 / 2.0);
+    sprite.set_position(config.width as f64 / 2.0, config.height as f64 / 2.0);
 
     id = scene.add_child(sprite);
 
@@ -67,11 +75,13 @@ fn main() {
         ]);
     scene.run(id, &rotate);
 
-    let rect = Ellipse::new_border(color::BLACK, 2.0);
-    let dims = [50.0,50.0,100.0,50.0];
+    let rect = Line::new(color::BLACK, 2.0);
+    let dims = [50.0,50.0,200.0,50.0];
 
     let mut x_scale = 1.0;
     let mut y_scale = 1.0;
+
+    let mut measures: Vec<Measure> = (0..5).map(|n| Measure::new(Config::small(), n)).collect();
 
     println!("Press any key to pause/resume the animation!");
 
@@ -83,6 +93,7 @@ fn main() {
             clear([1.0, 1.0, 1.0, 1.0], g);
             scene.draw(c.transform, g);
             rect.draw(dims, &c.draw_state, c.transform, g);
+            measures.iter().for_each(|m| m.draw(c.trans(0.0, 50.0), g));
         });
         
         if let Some(_) = e.press_args() {
@@ -91,8 +102,12 @@ fn main() {
         }
 
         if let Some(e) = e.resize_args() {
-            x_scale = e[0] as f64 / width as f64;
-            y_scale = e[1] as f64 / height as f64;
+            x_scale = e[0] as f64 / config.width as f64;
+            y_scale = e[1] as f64 / config.height as f64;
+        }
+
+        if let Some(e) = e.update_args() {
+            measures.iter_mut().for_each(|m| m.update(e.dt));
         }
     }
 }
