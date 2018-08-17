@@ -10,7 +10,7 @@ mod config;
 use config::Config;
 
 mod sheet;
-use sheet::Measure;
+use sheet::Sheet;
 
 use std::rc::Rc;
 
@@ -26,54 +26,57 @@ use ai_behavior::{
 
 fn main() {
     let config = Config::default();
+    println!("config: {:?}", config);
     let opengl = OpenGL::V3_2;
     let mut window: PistonWindow =
-        WindowSettings::new("piston: sprite", (config.width, config.height))
+        WindowSettings::new("piston: sprite", (config.width as u32, config.height as u32))
         .exit_on_esc(true)
         .opengl(opengl)
         .samples(16)
         .build()
         .unwrap();
+    
+    let config = config.with_padding(0.0, 0.1);
 
-    let assets = find_folder::Search::ParentsThenKids(3, 3)
-        .for_folder("assets").unwrap();
-    let id;
-    let mut scene = Scene::new();
-    let tex = Rc::new(Texture::from_path(
-            &mut window.factory,
-            assets.join("rust.png"),
-            Flip::None,
-            &TextureSettings::new()
-        ).unwrap());
-    let mut sprite = Sprite::from_texture(tex.clone());
-    sprite.set_position(config.width as f64 / 2.0, config.height as f64 / 2.0);
+    // let assets = find_folder::Search::ParentsThenKids(3, 3)
+    //     .for_folder("assets").unwrap();
+    // let id;
+    // let mut scene = Scene::new();
+    // let tex = Rc::new(Texture::from_path(
+    //         &mut window.factory,
+    //         assets.join("rust.png"),
+    //         Flip::None,
+    //         &TextureSettings::new()
+    //     ).unwrap());
+    // let mut sprite = Sprite::from_texture(tex.clone());
+    // sprite.set_position(config.width as f64 / 2.0, config.height as f64 / 2.0);
 
-    id = scene.add_child(sprite);
+    // id = scene.add_child(sprite);
 
-    // Run a sequence of animations.
-    let seq = Sequence(vec![
-        Action(Ease(EaseFunction::CubicOut, Box::new(ScaleTo(2.0, 0.5, 0.5)))),
-        Action(Ease(EaseFunction::BounceOut, Box::new(MoveBy(1.0, 0.0, 100.0)))),
-        Action(Ease(EaseFunction::ElasticOut, Box::new(MoveBy(2.0, 0.0, -100.0)))),
-        Action(Ease(EaseFunction::BackInOut, Box::new(MoveBy(1.0, 0.0, -100.0)))),
-        Wait(0.5),
-        Action(Ease(EaseFunction::ExponentialInOut, Box::new(MoveBy(1.0, 0.0, 100.0)))),
-        Action(Blink(1.0, 5)),
-        While(Box::new(WaitForever), vec![
-            Action(Ease(EaseFunction::QuadraticIn, Box::new(FadeOut(1.3)))),
-            Action(Ease(EaseFunction::QuadraticOut, Box::new(FadeIn(1.3)))),
-        ]),
-    ]);
-    scene.run(id, &seq);
+    // // Run a sequence of animations.
+    // let seq = Sequence(vec![
+    //     Action(Ease(EaseFunction::CubicOut, Box::new(ScaleTo(2.0, 0.5, 0.5)))),
+    //     Action(Ease(EaseFunction::BounceOut, Box::new(MoveBy(1.0, 0.0, 100.0)))),
+    //     Action(Ease(EaseFunction::ElasticOut, Box::new(MoveBy(2.0, 0.0, -100.0)))),
+    //     Action(Ease(EaseFunction::BackInOut, Box::new(MoveBy(1.0, 0.0, -100.0)))),
+    //     Wait(0.5),
+    //     Action(Ease(EaseFunction::ExponentialInOut, Box::new(MoveBy(1.0, 0.0, 100.0)))),
+    //     Action(Blink(1.0, 5)),
+    //     While(Box::new(WaitForever), vec![
+    //         Action(Ease(EaseFunction::QuadraticIn, Box::new(FadeOut(1.3)))),
+    //         Action(Ease(EaseFunction::QuadraticOut, Box::new(FadeIn(1.3)))),
+    //     ]),
+    // ]);
+    // scene.run(id, &seq);
 
-    // This animation and the one above can run in parallel.
-    let rotate = While(Box::new(WaitForever), vec![
-        Action(Ease(EaseFunction::ExponentialInOut,
-            Box::new(RotateTo(2.0, 360.0)))),
-        Action(Ease(EaseFunction::ExponentialInOut,
-            Box::new(RotateTo(2.0, 0.0))))
-        ]);
-    scene.run(id, &rotate);
+    // // This animation and the one above can run in parallel.
+    // let rotate = While(Box::new(WaitForever), vec![
+    //     Action(Ease(EaseFunction::ExponentialInOut,
+    //         Box::new(RotateTo(2.0, 360.0)))),
+    //     Action(Ease(EaseFunction::ExponentialInOut,
+    //         Box::new(RotateTo(2.0, 0.0))))
+    //     ]);
+    // scene.run(id, &rotate);
 
     let rect = Line::new(color::BLACK, 2.0);
     let dims = [50.0,50.0,200.0,50.0];
@@ -81,33 +84,43 @@ fn main() {
     let mut x_scale = 1.0;
     let mut y_scale = 1.0;
 
-    let mut measures: Vec<Measure> = (0..5).map(|n| Measure::new(Config::small(), n)).collect();
-
+    let (c1, c2) = config.split_vert(0.5, 0.1);
+    println!("(c1, c2): {:?}", (&c1, &c2));
+    let mut sheets = vec![Sheet::new(c1), Sheet::new(c2)];
+    
     println!("Press any key to pause/resume the animation!");
 
     while let Some(e) = window.next() {
-        scene.event(&e);
+        //scene.event(&e);
 
         window.draw_2d(&e, |c, g| {
-            let c = c.scale(x_scale, y_scale);
+            let render_args = e.render_args().unwrap();
+            println!("render args {:?}", render_args);
             clear([1.0, 1.0, 1.0, 1.0], g);
-            scene.draw(c.transform, g);
-            rect.draw(dims, &c.draw_state, c.transform, g);
-            measures.iter().for_each(|m| m.draw(c.trans(0.0, 50.0), g));
+            //let c = c.scale(x_scale, y_scale);
+            let rect = Rectangle::new([1.0,1.0,0.0,1.0]);
+            rect.draw([100.0,100.0,500.0,500.0], &c.draw_state, c.transform, g);
+
+            let rect = Rectangle::new([1.0,0.0,0.0,0.5]);
+            rect.draw(config.as_dims(), &c.draw_state, c.transform, g);
+        //    scene.draw(c.transform, g);
+        //    rect.draw(dims, &c.draw_state, c.transform, g);
+            sheets.iter().for_each(|m| m.draw(c, g, [0.0, 1.0, 0.0, 0.3]));
         });
         
-        if let Some(_) = e.press_args() {
-            scene.toggle(id, &seq);
-            scene.toggle(id, &rotate);
-        }
+        // if let Some(_) = e.press_args() {
+        //     scene.toggle(id, &seq);
+        //     scene.toggle(id, &rotate);
+        // }
 
         if let Some(e) = e.resize_args() {
-            x_scale = e[0] as f64 / config.width as f64;
-            y_scale = e[1] as f64 / config.height as f64;
+            x_scale = e[0] as f64 / config.height;
+            y_scale = e[1] as f64 / config.width;
+            println!("resize {}, {}", x_scale, y_scale);
         }
 
         if let Some(e) = e.update_args() {
-            measures.iter_mut().for_each(|m| m.update(e.dt));
+            sheets.iter_mut().for_each(|m| m.update(e.dt));
         }
     }
 }
