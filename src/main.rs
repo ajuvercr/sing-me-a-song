@@ -85,24 +85,15 @@ fn main() {
     let mut y_scale = 1.0;
 
     let (c1, c2) = config.split_vert(0.5, 0.1);
-    println!("(c1, c2): {:?}", (&c1, &c2));
     let mut sheets = vec![Sheet::new(c1), Sheet::new(c2)];
     
-    println!("Press any key to pause/resume the animation!");
-
     while let Some(e) = window.next() {
         //scene.event(&e);
 
         window.draw_2d(&e, |c, g| {
             let render_args = e.render_args().unwrap();
-            println!("render args {:?}", render_args);
             clear([1.0, 1.0, 1.0, 1.0], g);
             //let c = c.scale(x_scale, y_scale);
-            let rect = Rectangle::new([1.0,1.0,0.0,1.0]);
-            rect.draw([100.0,100.0,500.0,500.0], &c.draw_state, c.transform, g);
-
-            let rect = Rectangle::new([1.0,0.0,0.0,0.5]);
-            rect.draw(config.as_dims(), &c.draw_state, c.transform, g);
         //    scene.draw(c.transform, g);
         //    rect.draw(dims, &c.draw_state, c.transform, g);
             sheets.iter().for_each(|m| m.draw(c, g, [0.0, 1.0, 0.0, 0.3]));
@@ -116,7 +107,6 @@ fn main() {
         if let Some(e) = e.resize_args() {
             x_scale = e[0] as f64 / config.height;
             y_scale = e[1] as f64 / config.width;
-            println!("resize {}, {}", x_scale, y_scale);
         }
 
         if let Some(e) = e.update_args() {
