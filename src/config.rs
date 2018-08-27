@@ -1,4 +1,5 @@
 
+extern crate find_folder;
 use graphics::{Context};
 use piston_window::Transformed;
 
@@ -11,31 +12,35 @@ pub struct Config {
     pub lines: f64,
     pub x: f64,
     pub y: f64,
-    // pub smallest_note : u32,
+    // 2^smallest_note => smallest_note = 2 => smallest note would be a fourth
+    pub smallest_note : u32,
 }
 
 impl Config {
     pub fn default() -> Config {
+
         Config {
-            width: 1000.0,
+            width: 1500.0,
             height: 1000.0,
-            measure_size: 400.0,
+            measure_size: 600.0,
             speed: 500.0,
             lines: 5.0,
             x: 0.0,
             y: 0.0,
+            smallest_note: 2,
         }
     }
 
     pub fn small() -> Config {
         Config {
-            width: 1000.0,
+            width: 1500.0,
             height: 200.0,
-            measure_size: 400.0,
+            measure_size: 600.0,
             speed: 400.0,
             lines: 5.0,
             x: 0.0,
             y: 0.0,
+            smallest_note: 2,
         }
     }
 
