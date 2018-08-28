@@ -6,23 +6,26 @@ use graphics::types::Color;
 
 use piston_window::{Transformed, text};
 use graphics::glyph_cache::rusttype::GlyphCache;
-use gfx_device_gl::Factory;
+use gfx_device_gl::{Factory, Resources};
 use piston_window::texture::CreateTexture;
+use piston_window::*;
 
 
 use rand;
 use rand::Rng;
+use std::path::PathBuf;
 
 use config::Config;
 
 pub struct Sheet {
     config: Config,
     sheet: Vec<Measure>,
-
+    textures: Vec<Texture<Resources>>,
+    images: Vec<Image>
 }
 
 impl Sheet {
-    pub fn new(config: Config) -> Sheet {
+    pub fn new(config: Config, folder: &PathBuf, factory: Factory) -> Sheet {
         println!("new sheet: {:?}", config);
         let mut sheet = Vec::new();
         let mut x = 0.0;
@@ -31,8 +34,24 @@ impl Sheet {
 
             x += config.measure_size;
         }
+
+        let mut textures = Vec::new();
+        let mut images = Vec::new();
+        let texture_settings = TextureSettings::new();
+        (0..config.smallest_note).for_each(|n| {
+            let path = folder.join(format!("note{}.png", n));
+            let tex = Texture::from_path(&mut factory.clone(), path, Flip::None, &texture_settings).unwrap();
+            let info = tex.surface.get_info().to_image_info(0);
+            images.push(
+                Image::new().rect([0.0, 0.0, info.width as f64, info.height as f64])
+            );
+            textures.push(tex);
+        });
+
         Sheet {
-            sheet, config
+            sheet, config, 
+            images,
+            textures,
         }
     }
 
