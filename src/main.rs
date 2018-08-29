@@ -35,6 +35,7 @@ fn main() {
         WindowSettings::new("piston: sprite", (width as u32, height as u32))
         .exit_on_esc(true)
         .opengl(opengl)
+        .vsync(true)
         .build()
         .unwrap();
 
@@ -43,13 +44,6 @@ fn main() {
     let ref font = assets.join("FiraSans-Regular.ttf");
     let factory = window.factory.clone();
     let mut glyphs = Glyphs::new(font, factory.clone(), TextureSettings::new()).unwrap();
-
-    let texture = Texture::from_path(&mut factory.clone(), assets.join("note.png"), Flip::None, &TextureSettings::new()).unwrap();
-    //let texture: u32 = texture;
-    println!("texture: {:?}", texture.surface);
-    let info = texture.surface.get_info().to_image_info(0);
-    println!("texture: {:?}", texture.surface.get_info().to_image_info(0));
-    let image = Image::new().rect([0.0,0.0,info.width as f64, info.height as f64]);
 
     let config = Config::default();
     
@@ -70,8 +64,6 @@ fn main() {
         //    scene.draw(c.transform, g);
         //    rect.draw(dims, &c.draw_state, c.transform, g);
             sheets.iter().for_each(|m| m.draw(c, g, [0.0, 1.0, 0.0, 0.3], &mut glyphs));
-
-            image.draw(&texture, &c.draw_state, c.transform, g);
         });
         
 
