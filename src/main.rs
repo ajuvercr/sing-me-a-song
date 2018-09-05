@@ -18,6 +18,8 @@ use sheet::Sheet;
 use piston_window::*;
 use graphics::rectangle::square;
 
+use std::char;
+
 // use sprite::*;
 // use ai_behavior::{
 //     Action,
@@ -53,7 +55,7 @@ fn main() {
     // let mut y_scale = 1.0;
 
     let (c1, c2) = config.split_vert(0.5, 0.1);
-    let mut sheets = vec![Sheet::new(c1, &assets, factory.clone())];//, Sheet::new(c2)];
+    let mut sheets = vec![Sheet::new(c1, &assets, factory.clone()), Sheet::new(c2, &assets, factory.clone())];
     
     while let Some(e) = window.next() {
         //scene.event(&e);
@@ -65,6 +67,16 @@ fn main() {
         //    rect.draw(dims, &c.draw_state, c.transform, g);
             sheets.iter().for_each(|m| m.draw(c, g, [0.0, 1.0, 0.0, 0.3], &mut glyphs));
         });
+
+        if let Some(e) = e.button_args() {
+            if let Button::Keyboard(k) = e.button {
+                sheets.iter_mut().for_each(|m| {
+                    if let Some(c) = char::from_u32(k.code() as u32) {
+                        m.check(c);
+                    }
+                });
+            }
+        }
         
 
         // if let Some(e) = e.resize_args() {

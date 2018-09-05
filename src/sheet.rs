@@ -22,7 +22,9 @@ pub struct Sheet<T>
 
     config: Config,
     sheet: Vec<Measure<T>>,
-    sheet_config: SheetConfig<T>
+    sheet_config: SheetConfig<T>,
+
+    note_x : f64,
 }
 
 pub struct SheetConfig<T>
@@ -72,11 +74,24 @@ impl Sheet<Texture<Resources>> {
             x += config.measure_size;
         }
 
-
         Sheet {
+            note_x: 200.0,
             sheet, config, 
-            sheet_config: sc
+            sheet_config: sc,
         }
+    }
+
+    pub fn check(&mut self, note: char) -> bool {
+        let mut measures = self.sheet.iter_mut();
+
+        while let Some(m) = measures.next() {
+            if m.x + self.config.measure_size < self.note_x {
+                continue;
+            }
+            return m.check(note, self.note_x);
+        }
+
+        false
     }
 
     pub fn draw<G>(&self, c: Context, g: &mut G, color: Color, glyphs: &mut GlyphCache<Factory, Texture<Resources>>) 
@@ -87,6 +102,8 @@ impl Sheet<Texture<Resources>> {
 
             let c = self.config.trans(&c);
             self.sheet.iter().for_each(|m| m.draw(c, g, glyphs));
+
+            Line::new([1.0,0.0,0.0,1.0], 2.0).draw([self.note_x, 0.0, self.note_x, self.config.height], &c.draw_state, c.transform, g);
     }
 
     pub fn update(&mut self, dt: f64) {
@@ -122,6 +139,16 @@ impl<T> Measure<T>
             x,
             config: config,
         }
+    }
+
+    fn check(&mut self, note_char: char, note_x: f64) -> bool {
+        let mut out = false;
+
+        for note in self.notes.iter_mut() {
+            out = out || note.check(note_char, note_x - self.x);
+        }
+
+        out
     }
 
     pub fn draw<G>(&self, c: Context, g: &mut G, glyphs: &mut GlyphCache<Factory, T>)
@@ -163,7 +190,8 @@ struct Note<T>
     size: u32,
     tex: T,
     img: Image,
-    scale: f64
+    scale: f64,
+    special: bool,
 }
 
 static NOTES: [char; 7] = ['E', 'F', 'G', 'A', 'B', 'C', 'D'];
@@ -177,6 +205,7 @@ impl<T> Note<T>
             let width = 1.5*height;
             return vec![Note {
                 x: x*(config.measure_size - width), note, size: depth, config, 
+                special: false,
                 tex: sc.textures[depth as usize].clone(), img: sc.images[depth as usize].clone(), scale: sc.scale
             }];
         } else {
@@ -191,11 +220,20 @@ impl<T> Note<T>
         where G: Graphics<Texture = T> {
 
         let height = self.config.height / (self.config.lines + 1.0);
+        let width = self.tex.get_width() as f64;
         let y = (8 - self.note) as f64 / 8.0 * self.config.height + height/2.0;
 
         let trans = c.trans(self.x, y).transform;
+        let scale = trans.scale(self.scale, self.scale);
 
-        self.img.draw(&self.tex, &c.draw_state, trans.scale(self.scale, self.scale), g);
+        if self.special {
+            Ellipse::new([0.0, 1.0, 0.0, 1.0])
+                .draw([0.0, -3.0*height/2.0, 2.0*height,2.0* height], &c.draw_state, trans, g);
+            // Ellipse::new([0.0, 1.0, 0.0, 1.0])
+            //     .draw([0.0, -width/2.0  - height / (2.0 * self.scale), width, width], &c.draw_state, scale, g);
+        }
+
+        self.img.draw(&self.tex, &c.draw_state, scale, g);
 
         text::Text::new_color([1.0, 0.0, 0.0, 1.0], 48).draw(
             &NOTES[self.note].to_string(),
@@ -204,6 +242,18 @@ impl<T> Note<T>
             trans.trans(0.0, 40.0),
             g
         ).map_err(|_| ()).unwrap();
+    }
+
+    fn check(&mut self, note: char, note_x: f64) -> bool {
+        let width = self.tex.get_width() as f64 * self.scale;
+
+        println!("{}", width);
+
+        if NOTES[self.note] == note.to_ascii_uppercase() && self.x < note_x && self.x + width > note_x {
+            self.special = true;
+            return true && !self.special;
+        }
+        false
     }
 
     fn update(&mut self) {
